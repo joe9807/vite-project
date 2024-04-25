@@ -5,7 +5,8 @@ import {Observable} from "rxjs";
 function App() {
     const [data, setData] = useState();
     const [startId, setStartId] = useState(0);
-    let configId = '66c3f250-b76b-4cad-be8c-58c7ed91784f'
+    const [totalCount, setTotalCount] = useState(0);
+    let configId = '5508d649-396a-435f-9bed-915ff75e614a'
 
     useEffect(() => {
         let count = 0;
@@ -32,10 +33,11 @@ function App() {
             next: newData => {
                 setData(newData); // Обновление состояния компонента при получении новых данных
                 count++;
+                setTotalCount(prevState => prevState+1);
             },
             error: err => {
                 if (err.target.readyState === EventSource.CONNECTING && err.message === undefined){
-                    console.log("Поток стартовал с '"+startId+"' eventId; обработано '"+count+"' event(s); завершен на '"+eventId+"' eventId!");
+                    console.log(new Date().toLocaleTimeString()+": Поток стартовал с '"+startId+"' eventId; обработано '"+count+"' event(s); завершен на '"+eventId+"' eventId!");
                     setStartId(eventId);
                 } else {
                     console.error(err.message);
@@ -51,6 +53,7 @@ function App() {
         <>
             <div>
                 <p>данные</p>
+                <p>{totalCount}</p>
                 <p>{data}</p>
                 <p>-----</p>
             </div>
