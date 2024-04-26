@@ -6,7 +6,7 @@ function App() {
     const [data, setData] = useState();
     const [startId, setStartId] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
-    let configId = '5e841fd6-e7a3-4a02-aac6-504aca821d15';
+    let configId = '9dda7b47-7243-4f79-80a8-cf9f1a6ff899';
     let eventId = 0;
 
     useEffect(() => {
@@ -38,7 +38,15 @@ function App() {
             error: err => {
                 if (err.target.readyState === EventSource.CONNECTING && err.message === undefined){
                     console.log(new Date().toLocaleTimeString()+": Поток стартовал с '"+startId+"' eventId; обработано '"+count+"' event(s); завершен на '"+eventId+"' eventId!");
-                    setStartId(eventId);
+
+                    if (eventId === 0){
+                        console.log("EventId is 0 here. Strange situation. Decrease startId by 1.")
+
+                        setStartId(prevState => prevState-1);
+                        setTotalCount(prevState => prevState-1);
+                    } else {
+                        setStartId(eventId);
+                    }
                 } else {
                     console.error(err.message);
                 }
