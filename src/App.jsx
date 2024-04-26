@@ -6,11 +6,11 @@ function App() {
     const [data, setData] = useState();
     const [startId, setStartId] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
-    let configId = '5508d649-396a-435f-9bed-915ff75e614a'
+    let configId = '5e841fd6-e7a3-4a02-aac6-504aca821d15';
+    let eventId = 0;
 
     useEffect(() => {
         let count = 0;
-        let eventId = 0;
 
         // Функция, которая подписывается на поток изменений с сервера
         const dataStream = new Observable(observer => {
@@ -52,8 +52,9 @@ function App() {
     return (
         <>
             <div>
+                <p>{configId}</p>
                 <p>данные</p>
-                <p>{totalCount}</p>
+                <p>{totalCount.toLocaleString('ru-RU')}</p>
                 <p>{data}</p>
                 <p>-----</p>
             </div>
