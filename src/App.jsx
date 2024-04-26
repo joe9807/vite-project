@@ -4,10 +4,28 @@ import {Observable} from "rxjs";
 
 function App() {
     const [data, setData] = useState();
+    const [result, setResult] = useState();
     const [startId, setStartId] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
-    let configId = '9dda7b47-7243-4f79-80a8-cf9f1a6ff899';
+    let configId = '441c2eaf-b399-4de6-b4aa-93eb83e575b6';
     let eventId = 0;
+
+    function getConfig() {
+        fetch(`http://localhost:8080/config?configId=${configId}`)
+            .then(response => {
+                return response.json();
+            })
+            .then(config => {
+                console.log("Поток ничего не вернул, но миграция "+config+" еще в процессе. Делаем перечитку.")
+
+                setStartId(prevState => prevState - 1);
+                setTotalCount(prevState => prevState - 1);
+            }).catch(error =>{
+                let message = "Миграция с данным id закончилась (или не стартовала)."
+                console.log(message);
+                setResult(message);
+            })
+    }
 
     useEffect(() => {
         let count = 0;
@@ -39,11 +57,8 @@ function App() {
                 if (err.target.readyState === EventSource.CONNECTING && err.message === undefined){
                     console.log(new Date().toLocaleTimeString()+": Поток стартовал с '"+startId+"' eventId; обработано '"+count+"' event(s); завершен на '"+eventId+"' eventId!");
 
-                    if (eventId === 0){
-                        console.log("EventId is 0 here. Strange situation. Decrease startId by 1.")
-
-                        setStartId(prevState => prevState-1);
-                        setTotalCount(prevState => prevState-1);
+                    if (eventId === 0) {
+                        getConfig();
                     } else {
                         setStartId(eventId);
                     }
@@ -64,6 +79,7 @@ function App() {
                 <p>данные</p>
                 <p>{totalCount.toLocaleString('ru-RU')}</p>
                 <p>{data}</p>
+                <p>{result}</p>
                 <p>-----</p>
             </div>
         </>
