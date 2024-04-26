@@ -3,11 +3,13 @@ import './App.css'
 import {Observable} from "rxjs";
 
 function App() {
+    const migrationFinished = "Миграция с данным id закончилась (или не стартовала).";
     const [data, setData] = useState();
     const [result, setResult] = useState();
     const [startId, setStartId] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
-    let configId = '441c2eaf-b399-4de6-b4aa-93eb83e575b6';
+    const [trigger, setTrigger] = useState(false);
+    let configId = 'fdfe755a-9caa-4c0d-b707-bd64f037f108';
     let eventId = 0;
 
     function getConfig() {
@@ -18,12 +20,10 @@ function App() {
             .then(config => {
                 console.log("Поток ничего не вернул, но миграция "+config+" еще в процессе. Делаем перечитку.")
 
-                setStartId(prevState => prevState - 1);
-                setTotalCount(prevState => prevState - 1);
+                setTrigger(prevState => !prevState);
             }).catch(error =>{
-                let message = "Миграция с данным id закончилась (или не стартовала)."
-                console.log(message);
-                setResult(message);
+                console.log(migrationFinished);
+                setResult(migrationFinished);
             })
     }
 
@@ -70,7 +70,7 @@ function App() {
         return () => {
             subscription.unsubscribe();
         };
-    }, [startId]);
+    }, [startId, trigger]);
 
     return (
         <>
