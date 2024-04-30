@@ -1,86 +1,37 @@
-import { useEffect, useState } from 'react'
+import SockJS from 'sockjs-client'
+import { useEffect, useState, useRef } from 'react'
 import './App.css'
-import {Observable} from "rxjs";
+import {Stomp} from "@stomp/stompjs";
 
 function App() {
-    const migrationFinished = "Миграция с данным id закончилась (или не стартовала).";
-    const [data, setData] = useState();
-    const [result, setResult] = useState();
-    const [startId, setStartId] = useState(0);
-    const [totalCount, setTotalCount] = useState(0);
-    const [trigger, setTrigger] = useState(false);
-    let configId = 'fdfe755a-9caa-4c0d-b707-bd64f037f108';
-    let eventId = 0;
-
-    function getConfig() {
-        fetch(`http://localhost:8080/config?configId=${configId}`)
-            .then(response => {
-                return response.json();
-            })
-            .then(config => {
-                console.log("Поток ничего не вернул, но миграция "+config+" еще в процессе. Делаем перечитку.")
-
-                setTrigger(prevState => !prevState);
-            }).catch(error =>{
-                console.log(migrationFinished);
-                setResult(migrationFinished);
-            })
-    }
+    const [logs, setLogs] = useState('');
+    const [progress, setProgress] = useState('');
+    let stompClient;
 
     useEffect(() => {
-        let count = 0;
+        const client = new SockJS("http://localhost:8080/migration-statistics");
+        stompClient = Stomp.over(client);
+        stompClient.debug = () => {};
+        stompClient.connect({}, frame =>{
+            stompClient.subscribe("/topic/logs", message =>{
+                setLogs(message.body);
+            });
 
-        // Функция, которая подписывается на поток изменений с сервера
-        const dataStream = new Observable(observer => {
-            const eventSource = new EventSource(`http://localhost:8080/monitor?configId=${configId}&id=${startId}`);
-
-            eventSource.onmessage = event => {
-                eventId = event.lastEventId;
-                observer.next(event.data); // Отправка данных из сервера в поток
-            };
-            eventSource.onerror = error => {
-                observer.error(error); // Обработка ошибок
-            };
-            return () => {
-                eventSource.close();
-            };
+            stompClient.subscribe("/topic/progress", message =>{
+                let statistics = JSON.parse(message.body);
+                let result = "DONE: "+statistics.done+"; WARNINGS: "+statistics.warnings+"; FAILED: "+statistics.failed+"; INPROCESS: "+statistics.captured+"; NEW: "+statistics.created;
+                setProgress(result);
+            })
         });
-
-        // Подписка на поток данных с сервера
-        const subscription = dataStream.subscribe({
-            next: newData => {
-                setData(newData); // Обновление состояния компонента при получении новых данных
-                count++;
-                setTotalCount(prevState => prevState+1);
-            },
-            error: err => {
-                if (err.target.readyState === EventSource.CONNECTING && err.message === undefined){
-                    console.log(new Date().toLocaleTimeString()+": Поток стартовал с '"+startId+"' eventId; обработано '"+count+"' event(s); завершен на '"+eventId+"' eventId!");
-
-                    if (eventId === 0) {
-                        getConfig();
-                    } else {
-                        setStartId(eventId);
-                    }
-                } else {
-                    console.error(err.message);
-                }
-            }
-        });
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, [startId, trigger]);
+    }, []);
 
     return (
         <>
             <div>
-                <p>{configId}</p>
-                <p>данные</p>
-                <p>{totalCount.toLocaleString('ru-RU')}</p>
-                <p>{data}</p>
-                <p>{result}</p>
-                <p>-----</p>
+                <h2>Progress</h2>
+                {progress}
+                <h2>Логи</h2>
+                {logs}
             </div>
         </>
     )
