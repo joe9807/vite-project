@@ -17,7 +17,7 @@ function App() {
                 console.log(error);
             };
             stompClient.subscribe("/topic/statistics", message =>{
-                let statistics = JSON.parse(JSON.parse(message.body));
+                let statistics = JSON.parse(message.body);
                 let result = "DONE: "+statistics.done+"; WARNINGS: "+statistics.warnings+"; FAILED: "+statistics.failed+"; INPROCESS: "+statistics.captured+"; NEW: "+statistics.created;
                 setProgress(result);
                 setLogs(statistics.logs);
