@@ -6,23 +6,30 @@ import {Stomp} from "@stomp/stompjs";
 function App() {
     const [logs, setLogs] = useState('');
     const [progress, setProgress] = useState('');
-    let stompClient;
 
     useEffect(() => {
-        const client = new SockJS("http://localhost:8080/migration-statistics");
-        stompClient = Stomp.over(client);
+        let stompClient = Stomp.over(function(){
+            return new SockJS("http://localhost:8080/migration-statistics");
+        });
         stompClient.debug = () => {};
         stompClient.connect({}, frame =>{
-            stompClient.subscribe("/topic/logs", message =>{
-                setLogs(message.body);
-            });
-
-            stompClient.subscribe("/topic/progress", message =>{
-                let statistics = JSON.parse(message.body);
+            stompClient.onStompError = (error) => {
+                console.log(error);
+            };
+            stompClient.subscribe("/topic/statistics", message =>{
+                let statistics = JSON.parse(JSON.parse(message.body));
                 let result = "DONE: "+statistics.done+"; WARNINGS: "+statistics.warnings+"; FAILED: "+statistics.failed+"; INPROCESS: "+statistics.captured+"; NEW: "+statistics.created;
                 setProgress(result);
-            })
+                setLogs(statistics.logs);
+            }, function(error) {
+                // Обработка ошибки
+                console.error('Ошибка при получении сообщения:', error);
+            });
         });
+
+        stompClient.onWebSocketError = function(event) {
+            console.error('Произошла ошибка WebSocket:', event);
+        };
     }, []);
 
     return (
